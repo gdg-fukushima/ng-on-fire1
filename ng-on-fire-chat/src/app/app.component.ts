@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
-import { AngularFirestore } from '@angular/fire/firestore'; // 追加
-import { Observable } from 'rxjs'; // 追加
-
+import { AngularFirestore } from '@angular/fire/firestore';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -9,13 +8,18 @@ import { Observable } from 'rxjs'; // 追加
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  // ここから
   messages: Observable<any[]>;
+  inputMessage = 'リアルタイムデータバインド'; // これを追加
+
   constructor(
     db: AngularFirestore
   ) {
     this.messages = db.collection('messages').valueChanges();
     console.log(this.messages);
   }
-  // ここまで追加
+
+  // この関数を追加
+  sendMessage() {
+    console.log('動いてるよ!');
+  }
 }

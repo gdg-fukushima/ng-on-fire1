@@ -1,12 +1,20 @@
-<!-- ヘッダーを使う -->
 <mat-toolbar color="primary">
   <mat-toolbar-row>
-    <span>NG ON FIRE CHAT!!!</span>
+    <span>NG ON FIRE CHAT!!! {{inputMessage}}</span>
   </mat-toolbar-row>
 </mat-toolbar>
 
 <div class="content">
-  <!-- チャットの内容を表示する枠のテンプレートを使う -->
+  <!-- ここから追加 -->
+  <mat-card style="margin-bottom: 10px;">
+    <mat-card-content>
+      <mat-form-field class="comment-input">
+        <input [(ngModel)]="inputMessage" matInput placeholder="コメントしてください">
+      </mat-form-field>
+      <button (click)="sendMessage()" mat-raised-button color="accent">送信</button>
+    </mat-card-content>
+  </mat-card>
+  <!-- ここまで追加 -->
   <mat-card>
     <mat-card-content>
       <mat-list>

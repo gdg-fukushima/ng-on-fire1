@@ -1,5 +1,6 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms'; // 追加
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -9,9 +10,9 @@ import { AngularFireAuthModule } from '@angular/fire/auth';
 import { AngularFireStorageModule } from '@angular/fire/storage';
 import { environment } from '../environments/environment';
 
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations'; // 追加
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { MatButtonModule, MatInputModule, MatToolbarModule,
-  MatDividerModule, MatCardModule, MatIconModule, MatListModule } from '@angular/material'; // 追加
+  MatDividerModule, MatCardModule, MatIconModule, MatListModule } from '@angular/material';
 
 @NgModule({
   declarations: [
@@ -19,19 +20,20 @@ import { MatButtonModule, MatInputModule, MatToolbarModule,
   ],
   imports: [
     BrowserModule,
-    BrowserAnimationsModule, // 追加
+    FormsModule, // 追加
+    BrowserAnimationsModule,
     AppRoutingModule,
     AngularFireModule.initializeApp(environment.firebase),
     AngularFirestoreModule,
     AngularFireAuthModule,
     AngularFireStorageModule,
-    MatButtonModule, // 追加
-    MatInputModule, // 追加
-    MatToolbarModule, // 追加
-    MatDividerModule, // 追加
-    MatCardModule, // 追加
-    MatIconModule, // 追加
-    MatListModule // 追加
+    MatButtonModule,
+    MatInputModule,
+    MatToolbarModule,
+    MatDividerModule,
+    MatCardModule,
+    MatIconModule,
+    MatListModule
   ],
   providers: [],
   bootstrap: [AppComponent]

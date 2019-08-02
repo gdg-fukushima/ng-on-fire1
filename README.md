@@ -340,3 +340,169 @@ export class AppModule { }
 ```
 
 これでAngular Materialを使って、かっこいいデザインの部品を簡単に適応することができましたね。
+
+# Step3 Firestoreに入れるデータを画面から使ってみよう
+ここからは、Angularのアプリケーションから、実際にFirestoreと接続し、データをリアルタイムにバインドさせて行きましょう。
+
+## 3-1 HTML側の準備
+
+ユーザーがインプットした内容をFirestoreに保存するので、インプットとボタンを追加しておきます。
+`/src/app/app.component.html`
+```html
+<mat-toolbar color="primary">
+  <mat-toolbar-row>
+    <span>NG ON FIRE CHAT!!!</span>
+  </mat-toolbar-row>
+</mat-toolbar>
+
+<div class="content">
+  <!-- ここから追加 -->
+  <mat-card style="margin-bottom: 10px;">
+    <mat-card-content>
+      <mat-form-field class="comment-input">
+        <input matInput placeholder="コメントしてください">
+      </mat-form-field>
+      <button mat-raised-button color="accent">送信</button>
+    </mat-card-content>
+  </mat-card>
+  <!-- ここまで追加 -->
+  <mat-card>
+    <mat-card-content>
+      <mat-list>
+        <ng-container *ngFor="let message of messages | async; let i = index">
+          <mat-divider *ngIf="i > 0"></mat-divider>
+          <mat-list-item>{{message.body}} / {{message.name}}</mat-list-item>
+        </ng-container>
+      </mat-list>
+    </mat-card-content>
+  </mat-card>
+</div>
+
+<!-- これはあとで使うから消さないでね！ -->
+<router-outlet></router-outlet>
+```
+
+## 3-2 ビューのクリックイベントをコンポーネントに伝える
+ビューで起こったアクションから、コンポーネントに設定した関数を実行してみましょう。
+
+`/src/app/app.component.html`
+```html
+<button (click)="sendMessage()" mat-raised-button color="accent">送信</button>
+```
+
+ビュー側では`(click)`のように指定することで、ユーザーが行うイベントに対して、コンポーネント側の関数を指定することが簡単にできます。
+例ではボタンのクリックに対して、実行する関数を指定しています。
+
+ではコンポーネント側にも、関数を用意してあげましょう。
+
+`/src/app/app.component.ts`
+```ts
+import { Component } from '@angular/core';
+import { AngularFirestore } from '@angular/fire/firestore';
+import { Observable } from 'rxjs';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.scss']
+})
+export class AppComponent {
+  messages: Observable<any[]>;
+  constructor(
+    db: AngularFirestore
+  ) {
+    this.messages = db.collection('messages').valueChanges();
+    console.log(this.messages);
+  }
+
+  // この関数を追加
+  sendMessage() {
+    console.log('動いてるよ!');
+  }
+}
+```
+
+## 3-3 データバインド
+ここからは少し、Angualrの一番の魅力的な機能である、データバインドの機能をチェックしてみましょう。
+
+### コンポーネント側の設定
+コンポーネントにプログラム上から扱うことの出来る変数を用意します。
+クラスのメンバ変数として用意します。コンポーネントに入れ物を用意するイメージです。
+
+`/src/app/app.component.ts`
+```ts
+...
+
+export class AppComponent {
+  messages: Observable<any[]>;
+  inputMessage = 'リアルタイムデータバインド'; // これを追加
+
+  ...
+}
+```
+
+例では、`inputMessage`というコンポーネントに属した変数を作りました。
+そしてInputフォームとデータをバインド出来るように、設定を進めてみます。
+
+### ビューの設定
+試しにヘッダー上の文字と、ブラウザ上に表示されるテキストをバインドさせてみましょう。
+
+`/src/app/app.component.html`
+```html
+<mat-toolbar color="primary">
+  <mat-toolbar-row>
+    <!-- ヘッダーにバインドされた文字を表示させてみる {{inputMessage}} -->
+    <span>NG ON FIRE CHAT!!! {{inputMessage}}</span> 
+  </mat-toolbar-row>
+</mat-toolbar>
+```
+
+これですでに、コントローラーに設定した文字が、ビュー側に設定されていることがわかります。
+さぁ次はいよいよリアルタイムデータバインドです！
+
+## 3-4 リアルタイムデータバインド
+3-3で設定したデータバインドを、リアルタイムに変化が見られるように設定してみましょう。
+
+### モジュールの設定
+`/src/app/app.module.ts`
+```ts
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms'; // 追加
+...
+
+@NgModule({
+  declarations: [
+    AppComponent
+  ],
+  imports: [
+    BrowserModule,
+    FormsModule, // 追加
+    BrowserAnimationsModule,
+    AppRoutingModule,
+...
+```
+
+フォームとの連携用のモジュールの読み込みが完了すると、あとはもうビューとコントローラーをバインドをするだけです。
+
+### フォームのデータバインド ngModel
+フォームの中身のデータと変数をバインドさせるためには`ngModel`というものを使って、連動させることができます。
+
+`/src/app/app.component.html`
+```html
+<div class="content">
+  <mat-card style="margin-bottom: 10px;">
+    <mat-card-content>
+      <mat-form-field class="comment-input">
+        <!-- [(ngModel)]="inputMessage" -->
+        <input [(ngModel)]="inputMessage" matInput placeholder="コメントしてください">
+      </mat-form-field>
+      <button (click)="sendMessage()" mat-raised-button color="accent">送信</button>
+    </mat-card-content>
+  </mat-card>
+...
+```
+
+このように設定するだけで、実際のアプリを見てみると…。
+こんなに簡単な手数で、リアルタイムにフォームと連動する機能を実装することができましたね。
+いかにAngularが簡単にプログラムできるかということが分かっていただけるかと思います。
