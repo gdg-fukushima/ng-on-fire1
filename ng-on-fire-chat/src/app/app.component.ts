@@ -9,7 +9,6 @@ import { Observable } from 'rxjs'; // 追加
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  title = 'ng-on-fire-chat';
   // ここから
   messages: Observable<any[]>;
   constructor(
