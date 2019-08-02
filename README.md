@@ -1,3 +1,5 @@
+<img src="https://firebasestorage.googleapis.com/v0/b/gdg-fukushima.appspot.com/o/logos%2FngOnFire3.png?alt=media&token=cbc3beea-24cb-451f-8bff-2133330ded58">
+
 # NG ON FIRE!!! #1
 NG ON FIRE!!!とは、GDG(Google Developer Group) Fukushimaが開催している、AngularとFirebaseを使って、最初のアプリ開発をするためのハンズオンです。
 こちらでイベントを見つけることができます。
