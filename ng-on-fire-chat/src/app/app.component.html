@@ -1,26 +1,28 @@
 <mat-toolbar color="primary">
   <mat-toolbar-row>
-    <span>NG ON FIRE CHAT!!! {{inputMessage}}</span>
+    <!-- 確認用のバインドは削除 -->
+    <span>NG ON FIRE CHAT!!!</span>
   </mat-toolbar-row>
 </mat-toolbar>
 
 <div class="content">
-  <!-- ここから追加 -->
   <mat-card style="margin-bottom: 10px;">
     <mat-card-content>
       <mat-form-field class="comment-input">
         <input [(ngModel)]="inputMessage" matInput placeholder="コメントしてください">
       </mat-form-field>
-      <button (click)="sendMessage()" mat-raised-button color="accent">送信</button>
+      <button (click)="sendMessage()" mat-raised-button color="primary">送信</button>
     </mat-card-content>
   </mat-card>
-  <!-- ここまで追加 -->
   <mat-card>
     <mat-card-content>
       <mat-list>
         <ng-container *ngFor="let message of messages | async; let i = index">
           <mat-divider *ngIf="i > 0"></mat-divider>
-          <mat-list-item>{{message.body}} / {{message.name}}</mat-list-item>
+          <mat-list-item>
+            {{message.body}} / {{message.name}} ({{message.createdAt.toDate() | date: 'yyyy/MM/dd HH:mm:ss'}})
+            <button (click)="deleteMessage(message)" mat-button color="accent">削除</button>
+          </mat-list-item>
         </ng-container>
       </mat-list>
     </mat-card-content>

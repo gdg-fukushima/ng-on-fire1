@@ -9,17 +9,27 @@ import { Observable } from 'rxjs';
 })
 export class AppComponent {
   messages: Observable<any[]>;
-  inputMessage = 'リアルタイムデータバインド'; // これを追加
+  inputMessage = 'リアルタイムデータバインド';
 
   constructor(
-    db: AngularFirestore
+    // privateを追加
+    private db: AngularFirestore
   ) {
-    this.messages = db.collection('messages').valueChanges();
+    // idFieldを追加すると、そのドキュメントのインデックスが、指定した名前のプロパティに追加される
+    // コレクションを取得する際に、ref => ref.orderBy('createdAt', 'desc')とオーダーと昇降を指定する
+    this.messages = db.collection('messages', ref => ref.orderBy('createdAt', 'desc')).valueChanges({ idField: 'id' });
     console.log(this.messages);
   }
 
-  // この関数を追加
   sendMessage() {
-    console.log('動いてるよ!');
+    this.db.collection('messages').add({
+      name: '清水',
+      body: this.inputMessage,
+      createdAt: new Date() // ここを追加
+    });
+  }
+
+  deleteMessage(message) {
+    this.db.collection('messages').doc(message.id).delete();
   }
 }

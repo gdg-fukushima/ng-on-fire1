@@ -506,3 +506,206 @@ import { FormsModule } from '@angular/forms'; // 追加
 このように設定するだけで、実際のアプリを見てみると…。
 こんなに簡単な手数で、リアルタイムにフォームと連動する機能を実装することができましたね。
 いかにAngularが簡単にプログラムできるかということが分かっていただけるかと思います。
+
+# Step4 Firestoreにデータを保存する
+次はフォームのデータをFirestoreと連動させるところをやってみましょう。
+
+## 4-1 Firestoreにデータを追加する
+ここまでの流れで、ボタンをクリックすると関数を動かすこと、そしてフォームの変数をコンポーネントで扱うことができるようになりました。
+そうしたらあとは、実際にそのデータをFirestoreに送るだけです。
+
+始める前に、前のステップで追加した確認用のバインドを削除しておきます。
+`/src/app/app.component.html`
+```html
+<mat-toolbar color="primary">
+  <mat-toolbar-row>
+    <!-- 確認用のバインドは削除 -->
+    <span>NG ON FIRE CHAT!!!</span>
+  </mat-toolbar-row>
+</mat-toolbar>
+```
+
+### 関数から、Firestoreへデータを追加するように設定する
+すでに`sendMessage`という関数があるので、ボタンがクリックしたら、その関数の中でデータを登録するように作ります。
+
+`/src/app/app.component.ts`
+```ts
+...
+  constructor(
+    // privateを追加
+    private db: AngularFirestore
+  ) {
+    this.messages = db.collection('messages').valueChanges();
+    console.log(this.messages);
+  }
+
+  sendMessage() {
+    this.db.collection('messages').add({
+      name: '清水',
+      body: this.inputMessage
+    });
+  }
+...
+```
+
+まずはこのように設定します。
+
+そしてこれだけです。
+
+インジェクトした`db`という変数に`private`という設定をすると、クラス内のメンバ変数と同じようにアクセスする事ができます。
+メンバ変数にコンポーネントからアクセスする場合は、`this`つまりコンポーネント自身を指定してから、その変数を指定しています。
+
+実際にデータを登録するのはこのように記述した部分です。
+Firestoreのデータと連動させた際に、`name`と`body`というプロパティを持つデータを作りました。それと同じようなデータを保存するという設定です。
+
+`/src/app/app.component.ts`
+```ts
+    this.db.collection('messages').add({
+      name: '清水',
+      body: this.inputMessage
+    });
+```
+
+指定したコレクションに、追加`add`するだけで、データをFirestore上に保存することができ、更にその結果はリアルタイム連携されたデータに即時反映されることがわかると思います。
+ただこの状態では、順番がバラバラになっているので、チャットをしようとしても、どのデータが新しいのかわからないと思います。
+
+## 4-2 データを削除する
+次の項目で、新しいものが上に来るようにデータを作っていくのですが、その前にデータを削除する機能を作っておきましょう。
+Firebaseコンソールから消すこともできますが、これで何度も0から試すことが出来るようになります。
+
+まずは、messagesコレクションのドキュメントのインデックス=idを取得できるようにしておきましょう。
+
+`/src/app/app.component.ts`
+```ts
+  constructor(
+    private db: AngularFirestore
+  ) {
+    // idFieldを追加すると、そのドキュメントのインデックスが、指定した名前のプロパティに追加される
+    this.messages = db.collection('messages').valueChanges({ idField: 'id' });
+  }
+```
+
+そうするとidが受け取れるようになるので、ビュー側に削除ボタンを作り、クリックされた時に`deleteMessage`が実行され、その引数にmessage自体を渡すようにします。
+
+`/src/app/app.component.html`
+```html
+  <mat-list-item>
+    {{message.body}} / {{message.name}} <button (click)="deleteMessage(message)" mat-button color="accent">削除</button>
+  </mat-list-item>
+```
+
+
+そして`deleteMessage`かの関数をコントローラー側に用意しましょう。
+`message`の中には、先程`id`としてそのドキュメントのインデックスを入れるようにしたので、そのドキュメントを取得し、それをdeleteするというプログラムです。
+
+`/src/app/app.component.ts`
+```ts
+...
+  // 削除ボタンが押されたメッセージを削除する
+  deleteMessage(message) {
+    this.db.collection('messages').doc(message.id).delete();
+  }
+```
+
+これでメッセージが削除できるようになりましたね。実際にFirestoreコンソールからも削除されていることが確認できます。
+
+## 4-3 投稿された時間通りにソートする
+
+FirestoreのTimestamp型データを使って、Firestoreに時間を記録してみましょう。
+
+`/src/app/app.component.ts`
+```ts
+  sendMessage() {
+    this.db.collection('messages').add({
+      name: '清水',
+      body: this.inputMessage,
+      createdAt: new Date() // ここを追加
+    });
+  }
+```
+
+これだけです。一行追加するだけで、日付を保存することができました。
+これだけではまだソートされていないので、クエリを呼び出す際にソートした状態になるようにリクエストをします。
+
+`/src/app/app.component.ts`
+```ts
+  this.messages = db.collection('messages', ref => ref.orderBy('createdAt', 'desc')).valueChanges({ idField: 'id' });
+```
+
+これだけでソート項目とソートの順序が指定できました。
+実際にためしてみると、ソートどおりにメッセージが流れていることがわかります。
+
+## 4-4 日付をAngular Pipesを使って表現する
+追加した日付のデータを、ビューで表現するためには、まずどのようなデータの形でデータが保存されたかを説明します。
+Firestoreの日付型のデータは、Firestore独自のデータモデルになっているので、それをJS/TSでわかるようにする必要があります。
+
+### Firestoreの日付型から、JS標準の日付型のデータへ変換する
+
+`/src/app/app.component.html`
+```html
+  <mat-list-item>
+    {{message.body}} / {{message.name}} ({{message.createdAt.toDate()}})
+    <button (click)="deleteMessage(message)" mat-button color="accent">削除</button>
+  </mat-list-item>
+```
+
+`message.createdAt.toDate()`
+こうするとTSで扱える日付型になった事がわかりますが、これでも人間が読むときには読みづらいものになっています。
+
+```
+ Sat Aug 03 2019 01:06:56 GMT+0900 (Japan Standard Time)
+```
+
+この日付型データを、更に読みやすくするためにはどうすればいいでしょうか。
+JSを使うなら、年を取得して月を取得してそれぞれほしい形に当てはめて…
+
+Angularではそういった面倒くさい処理を共通化して変換するための`Pipe`という機能があります。
+使うのはとても簡単です。
+
+### JS標準の日付型のデータを、人間が読みやすいフォーマットに変換する
+
+`/src/app/app.component.html`
+```html
+  <mat-list-item>
+    {{message.body}} / {{message.name}} ({{message.createdAt.toDate() | date}})
+    <button (click)="deleteMessage(message)" mat-button color="accent">削除</button>
+  </mat-list-item>
+```
+
+先程のHTMLとどこが違うか探すのが大変そうなくらいですね。
+
+正解はこれが
+`{{message.createdAt.toDate()}}`
+こうなっただけです
+`{{message.createdAt.toDate() | date}}`
+
+それだけで以下のように出力されていることがわかります。
+
+```
+Sat Aug 03 2019 01:06:56 GMT+0900 (Japan Standard Time)
+↓
+Aug 3, 2019
+```
+
+しかしこれだけではまだ日本人には読みづらいかもしれません。そう言うときにも、任意のフォーマットに変換することが簡単にできます。
+
+```html
+{{message.createdAt.toDate() | date: : 'yyyy/MM/dd HH:mm:ss'}}
+```
+
+フォーマットを適応することで、結果は以下のようになります。
+```
+Aug 3, 2019
+↓
+2019/08/03 01:06:56
+```
+
+その他のフォーマットの表現は、公式のドキュメントにまとまっています。
+https://angular.io/api/common/DatePipe#custom-format-options
+
+### 4-5 ユーザーの名前を指定できるようにする
+
+ここまで来たらあとは自分でやってみましょう。
+きっとこれまでのヒントから、すぐに作ることが出来ると思います。
+
+NG ON FIRE!!!は今後もステップアップしていく内容を提供していきますので、GDG Fukushimaをよろしくおねがいします！
