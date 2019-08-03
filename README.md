@@ -240,7 +240,7 @@ import { AngularFireStorageModule } from '@angular/fire/storage';
 import { environment } from '../environments/environment';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'; // 追加
-import { MatButtonModule, MatInputModule, MatToolbarModule, MatDividerModule, MatCardModule, MatIconModule } from '@angular/material'; // 追加
+import { MatListModule, MatButtonModule, MatInputModule, MatToolbarModule, MatDividerModule, MatCardModule, MatIconModule } from '@angular/material'; // 追加
 
 @NgModule({
   declarations: [
@@ -259,7 +259,8 @@ import { MatButtonModule, MatInputModule, MatToolbarModule, MatDividerModule, Ma
     MatToolbarModule, // 追加
     MatDividerModule, // 追加
     MatCardModule, // 追加
-    MatIconModule // 追加
+    MatIconModule, // 追加
+    MatListModule // 追加
   ],
   providers: [],
   bootstrap: [AppComponent]
@@ -692,7 +693,7 @@ Aug 3, 2019
 しかしこれだけではまだ日本人には読みづらいかもしれません。そう言うときにも、任意のフォーマットに変換することが簡単にできます。
 
 ```html
-{{message.createdAt.toDate() | date: : 'yyyy/MM/dd HH:mm:ss'}}
+{{message.createdAt.toDate() | date: 'yyyy/MM/dd HH:mm:ss'}}
 ```
 
 フォーマットを適応することで、結果は以下のようになります。
