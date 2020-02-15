@@ -5,7 +5,7 @@
   </mat-toolbar-row>
 </mat-toolbar>
 
-<div class="content">
+<div class="content" *ngIf="logedIn === true">
   <mat-card style="margin-bottom: 10px;">
     <mat-card-content>
       <mat-form-field class="comment-input">
@@ -25,6 +25,21 @@
           </mat-list-item>
         </ng-container>
       </mat-list>
+    </mat-card-content>
+  </mat-card>
+</div>
+
+<div class="content" *ngIf="logedIn === false">
+  <!-- この中にログインする前のHTMLを書く。ここにログイン用のフォームを作ります。 -->
+  <mat-card style="margin-bottom: 10px;">
+    <mat-card-content>
+      <mat-form-field class="comment-input">
+        <input [(ngModel)]="email" matInput placeholder="Email">
+      </mat-form-field>
+      <mat-form-field class="comment-input">
+        <input [(ngModel)]="password" matInput placeholder="パスワード">
+      </mat-form-field>
+      <button (click)="login()" mat-raised-button color="primary">ログイン</button>
     </mat-card-content>
   </mat-card>
 </div>

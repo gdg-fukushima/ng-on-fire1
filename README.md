@@ -712,3 +712,122 @@ https://angular.io/api/common/DatePipe#custom-format-options
 きっとこれまでのヒントから、すぐに作ることが出来ると思います。
 
 NG ON FIRE!!!は今後もステップアップしていく内容を提供していきますので、GDG Fukushimaをよろしくおねがいします！
+
+# Step5 ユーザ認証をしてみよう
+
+## 5-1 Firebaseのコンソール画面で、ユーザーを追加する
+
+1. Firebaseのコンソールに行き、`Authentication`を選択。
+2. メールでのログインを許可する。
+3. 好きなアドレスとパスワードでユーザーを追加する。
+
+## 5-2 ログイン画面の準備
+
+### 5-2-1 まずngIfを使ってみよう
+
+Angularには"ngIf"という便利な機能があります。
+IF文のように、テンプレートの中で「もしこれがこうだったら、ここを表示する・しない」という操作を行うことが出来ます。
+
+例えばコンポーネントで`logedIn`という変数に`true`を渡しているとしましょう。
+
+`app.component.ts`
+```ts
+export class AppComponent {
+  messages: Observable<any[]>;
+  inputMessage = 'リアルタイムデータバインド';
+  logedIn = false; // ここのぶぶん
+
+  ...
+}
+```
+
+そうするとコンポーネント側ではngIfを使って表示を制御することが出来ます。
+
+`app.component.html`
+```html
+<ng-container *ngIf="logedIn === true">ログインされました</ng-container>
+<ng-container *ngIf="logedIn === false">ログインしていません</ng-container>
+```
+
+そうすると、`ng serve`でアプリを起動している場合、logedInの変数を変えると、出てくる文字が変わっているのがわかると思います。
+
+### 5-2-2 ログインフォームを作る
+
+```html
+<div class="content" *ngIf="logedIn === true">
+  <!-- この中にログイン後のHTMLを書く。これまで作った内容でOK。 -->
+</div>
+<div class="content" *ngIf="logedIn === false">
+  <!-- この中にログインする前のHTMLを書く。ここにログイン用のフォームを作ります。 -->
+  <mat-card style="margin-bottom: 10px;">
+    <mat-card-content>
+      <mat-form-field class="comment-input">
+        <input [(ngModel)]="email" matInput placeholder="Email">
+      </mat-form-field>
+      <mat-form-field class="comment-input">
+        <input [(ngModel)]="password" matInput placeholder="パスワード">
+      </mat-form-field>
+      <button (click)="login()" mat-raised-button color="primary">ログイン</button>
+    </mat-card-content>
+  </mat-card>
+</div>
+```
+
+`app.component.ts`
+
+```ts
+...
+import { AngularFireAuth } from '@angular/fire/auth'; // 追加
+...
+
+  constructor(
+    private db: AngularFirestore,
+    private afAuth: AngularFireAuth // 追加
+  ) {
+      ...
+  }
+
+...
+  // 追加
+  login() {
+    this.afAuth.auth.signInWithEmailAndPassword(this.email, this.password).then(res => {
+      alert('ログイン成功しました。');
+    }).catch(res => {
+      alert('ログインできません。');
+    });
+  }
+```
+
+`then`と`catch`はそれぞれ成功時と失敗時に呼ばれる関数です。ログインに成功すれば`then`の中身が実行され、失敗すれば`catch`の中身が実行されます。
+この段階で、5-1で作ったユーザーとパスワードの組み合わせでログインできるかどうか、また組み合わせが違うとログインできないかを確認してみましょう。
+
+## 5-3 ログインしたあとの処理を書く
+
+Firebase Authのログインが成功したら`ngIf`の条件を変えるだけで表示されるコンテンツが変わります。
+
+```ts
+  login() {
+    this.afAuth.auth.signInWithEmailAndPassword(this.email, this.password).then(res => {
+      alert('ログイン成功しました。');
+      this.logedIn = true;
+    }).catch(res => {
+      alert('ログインできません。');
+    });
+  }
+```
+
+## 5-4 セキュリティを高める
+
+1. Firebaseコンソールに行き`Database`を開きます。
+2. `ルール`のタブを開き、ルールの定義を更新します。
+
+```ts
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth.uid != null;
+    }
+  }
+}
+```
