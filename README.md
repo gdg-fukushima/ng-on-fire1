@@ -1,5 +1,8 @@
 <img src="https://firebasestorage.googleapis.com/v0/b/gdg-fukushima.appspot.com/o/logos%2FngOnFire3.png?alt=media&token=cbc3beea-24cb-451f-8bff-2133330ded58">
 
+# Change Log
+2020-06-05: 現時点で最新版の状態に対応できるようにアップデート
+
 # NG ON FIRE!!! #1
 NG ON FIRE!!!とは、GDG(Google Developer Group) Fukushimaが開催している、AngularとFirebaseを使って、最初のアプリ開発をするためのハンズオンです。
 こちらでイベントを見つけることができます。
@@ -14,13 +17,19 @@ https://docs.google.com/presentation/d/1PHn5D4Cr78eCzkKvpBBPbyiWoPyz3XoVAaYgL_sL
 https://code.visualstudio.com/
 
 - Node.jsがインストールされていること
+
 **Mac**
+
 https://qiita.com/kyosuke5_20/items/c5f68fc9d89b84c0df09
+
 **Windows**
+
 https://qiita.com/Masayuki-M/items/840a997a824e18f576d8
 
 - Firebaseプロジェクトが作成されていること
+
 https://blog.katsubemakito.net/firebase/firebase-make-newproject
+https://qiita.com/yoshi0518/items/25af102845ba05545f98
 
 # Step1 AngularFireを使って、AngularとFirebaseを接続する
 ## 1-1. Angularを使えるようにする
@@ -77,20 +86,54 @@ ng serve
 表示されていれば、最初の関門はクリアです。
 確認できたら`Ctrl + c`でAngularのアプリを終了させます。
 
-## 1-4. AngularFireのインストール
+## 1-4. Firebase CLIのインストールとログイン
+
+以下のドキュメントを参照して、Firebase CLIをインストールします。
+https://firebase.google.com/docs/cli?hl=ja#npm_1
+
+基本的には以下のようなコマンドを叩き、チュートリアルに従ってFirebase CLIをアカウントと連動させます。
+
+```sh
+npm install -g firebase-tools
+firebase login
+```
+
+## 1-5. AngularFireのインストール
 3の手順が終わった直後であれば、ターミナル上では`ng-on-fire-chat`のディレクトリにいるので、以下の`cd`コマンドは不要です。
 一旦VSCodeを終了したりして、ターミナルを再起動したのであれば、`ng-on-fire-chat`に`cd`（移動）してから続けましょう。
 
-```
+```sh
+# 1
 cd ng-on-fire-chat
-npm install firebase @angular/fire --save
+# 2
+npm install firebase --save
+# 3
+ng add @angular/fire@next
+# 4
+? Please select a project: (Use arrow keys or type to search)
+❯ project-foo (project-foo) 
+  project-bar (project-bar) 
 ```
 
 1. Angularプロジェクトのディレクトリに移動して
-2. AangularFireを使えるようにする
+2. AngularがFirebaseを使えるようにする
+3. AngularがAngularFireを使えるようにする
+4. 作成したプロジェクト（前提条件のところで作ったもの）を選択する
 というコマンドです。
 
-## 1-5. Firebaseの情報をAngularプロジェクトに設定する
+## 1-6 Firebaseのコンソールから、Firestoreを使えるようにする
+
+Firebaseのコンソールから、FirestoreをアクティベートするとFirestoreが使えるようになります。
+途中でセキュリティの状態を確認されますが、まずはテストモードで開始してください。
+
+**注意**
+
+テストモードでは誰でも自由にアクセス可能になる状態なので、想定していない外部からのアクセスにより課金が発生する場合があります。
+デフォルトでは30日経過するとまたアクセスできないようになりますが、使わなくなった場合は認証をロックするか、プロジェクト自体を削除しておくことをオススメします。
+
+https://firebase.google.com/docs/firestore/quickstart?hl=ja#create
+
+## 1-7. Firebaseの情報をAngularプロジェクトに設定する
 初期状態では、以下のようなファイルが作成されていると思います。
 `/src/environments/environment.ts`
 ```ts
@@ -100,6 +143,7 @@ export const environment = {
 ```
 
 そのファイルを、以下のように書き換え、Firebaseのコンソールから取得したAPIキーなどのデータを、<>で書いてあるところに入れ替えます。
+
 `/src/environments/environment.ts`
 ```ts
 export const environment = {
@@ -110,7 +154,8 @@ export const environment = {
     databaseURL: '<your-database-URL>',
     projectId: '<your-project-id>',
     storageBucket: '<your-storage-bucket>',
-    messagingSenderId: '<your-messaging-sender-id>'
+    messagingSenderId: '<your-messaging-sender-id>',
+    appId: '<your-app-id>',
   }
 };
 ```
@@ -121,7 +166,7 @@ export const environment = {
     apiKey: 'xoxoxoxoxoxoxo', <= 正解
 ```
 
-## 1-6. AngularFire用のモジュールを設定
+## 1-8. AngularFire用のモジュールを設定
 
 `/src/app/app.module.ts`
 ```ts
@@ -151,8 +196,7 @@ import { environment } from '../environments/environment'; // 追加
 export class AppModule { }
 ```
 
-## 1-7. AngularFireモジュールを注入して、DBと接続する
-これが噂の依存性注入だ！
+## 1-9. AngularFireモジュールをページで使えるようにして、DBと接続する
 
 `/src/app/app.component.ts`
 ```ts
@@ -171,7 +215,7 @@ export class AppComponent {
   // ここから
   messages: Observable<any[]>;
   constructor(
-    db: AngularFirestore // DI
+    db: AngularFirestore // モジュール
   ) {
     this.messages = db.collection('messages').valueChanges(); // DBと接続
   }
@@ -179,7 +223,11 @@ export class AppComponent {
 }
 ```
 
-## 1-8. ビューの設定
+## 1-10. ビューの設定
+
+DBから取得したデータを表示するために、HTML側にも以下の様に記述します。
+もともと書いてあるサンプルのHTMLの内容は全て消してしまってOK。
+
 `/src/app/app.component.html`
 ```html
 <ul>
@@ -189,16 +237,28 @@ export class AppComponent {
 </ul>
 ```
 
+messagesというFirestoreのコレクションに以下のような構造のデータが入っているという前提です。
+```js
+[{
+  body: 'こんにちは',
+  name: 'GDG Fukushima'
+}, ...]
+```
+
 ここまで終わったら、ターミナル起動しておく。すでに起動しっぱなしならそのままでOK。
 ```
 ng serve
 ```
 
 
-## 1-9. Firebaseコンソールからデータを直接入れてみよう
+## 1-11. Firebaseコンソールからデータを直接入れてみよう
 
-8まで正確に終わっていれば、もうすでにFirestoreが使えるようになっています。
+1-10まで正確に終わっていれば、もうすでにFirestoreが使えるようになっています。
 Firebaseコンソールから、messagesコレクションを作り、ドキュメントを追加してみよう。
+
+https://firebase.google.com/docs/firestore/using-console?hl=ja#add_data
+
+<img width="1293" alt="Screen Shot 2020-06-05 at 12 18 00" src="https://user-images.githubusercontent.com/1407941/83833384-c68dd080-a726-11ea-8425-6dab74c7e0e1.png">
 
 さてどうなるでしょうか！
 
@@ -210,15 +270,32 @@ Angular Materialは、Angularのための便利なUI作成ツールです。
 
 一旦VSCodeを終了したりして、ターミナルを再起動したのであれば、`ng-on-fire-chat`に`cd`（移動）してから続けましょう。
 
-```
+```sh
+# 1
 cd ng-on-fire-chat
-npm install --save @angular/material @angular/cdk @angular/animations
-npm install --save normalize.css
+# 2
+ng add @angular/material
+# 3
+>Installing packages for tooling via npm.
+>Installed packages for tooling via npm.
+>? Choose a prebuilt theme name, or "custom" for a custom theme: (Use arrow keys)
+❯ Indigo/Pink        [ Preview: https://material.angular.io?theme=indigo-pink ] 
+  Deep Purple/Amber  [ Preview: https://material.angular.io?theme=deeppurple-amber ] 
+  Pink/Blue Grey     [ Preview: https://material.angular.io?theme=pink-bluegrey ] 
+  Purple/Green       [ Preview: https://material.angular.io?theme=purple-green ] 
+  Custom 
+# 4
+>? Set up global Angular Material typography styles? (y/N)
+# 5
+>? Set up browser animations for Angular Material? (Y/n) 
 ```
 
 1. Angularプロジェクトのディレクトリに移動して
 2. Angular Materialを使えるようにする
-3. デフォルトのCSSをキャンセルするためのnormalize.cssをインストール
+3. 使うテーマの色を聞かれているので、好きなものを選ぶ
+4. Angular Material typographyを使うかどうか（特にわからない場合は使わなくてOK => そのままEnter）
+    https://material.angular.io/guide/typography
+5. Angular MaterialのAnimationを使うかどうか（特にわからない場合は使うでOK => そのままEnter）
 
 ## 2-2. AngularにAngular Materialの設定をする
 Angular Materialのインストールが終わっているので、次はAngularでその部品が使えるように準備をします。
@@ -240,7 +317,13 @@ import { AngularFireStorageModule } from '@angular/fire/storage';
 import { environment } from '../environments/environment';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'; // 追加
-import { MatListModule, MatButtonModule, MatInputModule, MatToolbarModule, MatDividerModule, MatCardModule, MatIconModule } from '@angular/material'; // 追加
+import { MatListModule } from '@angular/material/list'; // 追加
+import { MatButtonModule } from '@angular/material/button'; // 追加
+import { MatInputModule } from '@angular/material/input'; // 追加
+import { MatToolbarModule } from '@angular/material/toolbar'; // 追加
+import { MatDividerModule } from '@angular/material/divider'; // 追加
+import { MatCardModule } from '@angular/material/card'; // 追加
+import { MatIconModule } from '@angular/material/icon'; // 追加
 
 @NgModule({
   declarations: [
@@ -266,38 +349,6 @@ import { MatListModule, MatButtonModule, MatInputModule, MatToolbarModule, MatDi
   bootstrap: [AppComponent]
 })
 export class AppModule { }
-```
-
-### CSSの設定
-`/src/styles.scss`
-```scss
-@import '~normalize.css';
-@import "~@angular/material/prebuilt-themes/indigo-pink.css";
-```
-リセット用のnormalize.cssと、Angular Materialがデフォルトの配色パターンとして用意しているCSSを読み込みます。
-
-### アイコンフォントの読み込み
-
-`/src/index.html`
-```html
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>NgOnFireChat</title>
-  <base href="/">
-
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-
-  <!-- 追加 -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-
-</head>
-<body>
-  <app-root></app-root>
-</body>
-</html>
 ```
 
 これでAngular Materialを使用する準備ができました。
@@ -425,6 +476,8 @@ export class AppComponent {
 }
 ```
 
+ブラウザの開発者コンソールで「動いてるよ!」と出てくれば成功です。
+
 ## 3-3 データバインド
 ここからは少し、Angualrの一番の魅力的な機能である、データバインドの機能をチェックしてみましょう。
 
@@ -544,7 +597,7 @@ import { FormsModule } from '@angular/forms'; // 追加
 
   sendMessage() {
     this.db.collection('messages').add({
-      name: '清水',
+      name: 'GDG Fukushima',
       body: this.inputMessage
     });
   }
@@ -564,7 +617,7 @@ Firestoreのデータと連動させた際に、`name`と`body`というプロ�
 `/src/app/app.component.ts`
 ```ts
     this.db.collection('messages').add({
-      name: '清水',
+      name: 'GDG Fukushima',
       body: this.inputMessage
     });
 ```
@@ -604,6 +657,13 @@ Firebaseコンソールから消すこともできますが、これで何度も
 `/src/app/app.component.ts`
 ```ts
 ...
+  sendMessage() {
+    this.db.collection('messages').add({
+      name: 'GDG Fukushima',
+      body: this.inputMessage
+    });
+  }
+  // ここから追加
   // 削除ボタンが押されたメッセージを削除する
   deleteMessage(message) {
     this.db.collection('messages').doc(message.id).delete();
@@ -620,7 +680,7 @@ FirestoreのTimestamp型データを使って、Firestoreに時間を記録し�
 ```ts
   sendMessage() {
     this.db.collection('messages').add({
-      name: '清水',
+      name: 'GDG Fukushima',
       body: this.inputMessage,
       createdAt: new Date() // ここを追加
     });
@@ -718,8 +778,8 @@ NG ON FIRE!!!は今後もステップアップしていく内容を提供して�
 ## 5-1 Firebaseのコンソール画面で、ユーザーを追加する
 
 1. Firebaseのコンソールに行き、`Authentication`を選択。
-2. メールでのログインを許可する。
-3. 好きなアドレスとパスワードでユーザーを追加する。
+2. 「Sign-in method」タブからメールでのログインを許可する。
+3. 「Users」タブから任意のアドレスとパスワードでユーザーを追加する。
 
 ## 5-2 ログイン画面の準備
 
@@ -818,6 +878,9 @@ Firebase Authのログインが成功したら`ngIf`の条件を変えるだけ�
 
 ## 5-4 セキュリティを高める
 
+今までは、全てFirestoreの「テストモード」でサンプルを動かしてきたので、誰でも自由にデータを読み書きできる状態でした。
+ログイン画面を実装し、ログインできるようになったので、Firebaseの認証がされている場合だけデータを読み書きするように、Firestoreのセキュリティルールを更新しましょう。
+
 1. Firebaseコンソールに行き`Database`を開きます。
 2. `ルール`のタブを開き、ルールの定義を更新します。
 
@@ -831,3 +894,6 @@ service cloud.firestore {
   }
 }
 ```
+
+これで、ログインがされていないブラウザからはデータの読み書きができないようになりました。
+試しに`app.component.html`の`logedIn`を`true`にして、ログインしていない別のブラウザなどでページを開いてコメントを更新すると、エラーになることが確認できます。

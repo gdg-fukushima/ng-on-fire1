@@ -10,7 +10,7 @@ describe('workspace-project App', () => {
 
   it('should display welcome message', () => {
     page.navigateTo();
-    expect(page.getTitleText()).toEqual('Welcome to ng-on-fire-chat!');
+    expect(page.getTitleText()).toEqual('ng-on-fire-chat app is running!');
   });
 
   afterEach(async () => {

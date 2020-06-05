@@ -38,7 +38,7 @@ export class AppComponent {
   }
 
   login() {
-    this.afAuth.auth.signInWithEmailAndPassword(this.email, this.password).then(res => {
+    this.afAuth.signInWithEmailAndPassword(this.email, this.password).then(res => {
       alert('ログイン成功しました。');
       this.logedIn = true;
     }).catch(res => {
